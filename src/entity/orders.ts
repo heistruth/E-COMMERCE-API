@@ -1,6 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, JoinColumn} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, JoinColumn, ManyToOne} from "typeorm";
 import { User} from "./User"
-import { Order_items } from "./order_items"
+
 
 @Entity()
 export class Orders {
@@ -16,10 +16,17 @@ export class Orders {
     @Column()
     status: string
 
-    @OneToMany(() => User, (user) => user.orders)
+    @Column("simple-json")
+    items: { productId: number, quantity: number, price: number}[];
+
+    @Column()
+    createdAt: Date;
+
+    @Column()
+    cart_id: number
+
+    @ManyToOne(() => User, (user) => user.orders)
     user: User
 
-    @OneToMany(() => Order_items, (order_items) => order_items.orders)
-    @JoinColumn()
-    order_items: Order_items
+    
 }

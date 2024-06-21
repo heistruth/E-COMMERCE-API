@@ -1,6 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, JoinColumn} from "typeorm";
 import { Cart_items } from "./cart_items";
-import { Order_items } from "./order_items";
 
 @Entity()
 export class Products {
@@ -26,9 +25,7 @@ export class Products {
     @JoinColumn()
     cart_items: Cart_items
 
-    @OneToMany(() => Order_items, (order_items) => order_items.products)
-    @JoinColumn()
-    order_items: Order_items
+    
 
 
 }

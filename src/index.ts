@@ -1,17 +1,21 @@
 import { AppDataSource } from "./data-source"
 import express from "express";
-import router from "./routes/userRoute";
+import cartRouter from "./routes/cartRoute";
+import userRouter from "./routes/userRoute";
+import productRouter from "./routes/productRoute";
+import cartItemRouter from "./routes/carItemsRoute";
+import orderRouter from "./routes/ordersRoute"
 import { PORT } from "./config";
 import bodyParser from "body-parser";
-// import jwt from "jsonwebtoken"
-// import { User } from "./entity/User";
-
-// const userRepository = AppDataSource.manager.getRepository(User)
 
 const app = express()
 app.use(express.json())
 app.use(bodyParser.json())
-app.use(router)
+app.use(cartRouter)
+app.use(userRouter)
+app.use(productRouter)
+app.use(cartItemRouter)
+app.use(orderRouter)
 
 const main = async () => {
     try {

@@ -4,6 +4,15 @@ import { Cart } from "../entity/cart";
 import { Cart_items } from "../entity/cart_items";
 import { User } from "../entity/User";
 import { Products } from "../entity/Products";
+import { Orders } from "../entity/orders";
+import { Repository } from "typeorm";
+
+
+const cartItemRepository = AppDataSource.manager.getRepository(Cart_items);
+const cartRepository = AppDataSource.manager.getRepository(Cart);
+const orderRespository = AppDataSource.manager.getRepository(Orders);
+const userRepository = AppDataSource.manager.getRepository(User);
+const productRepository = AppDataSource.manager.getRepository(Products)
 
 class cartController {
     public static getcartbyid = async (req: any, res: Response, next: NextFunction) => {
@@ -11,8 +20,7 @@ class cartController {
         const id = req.cart_id
 
         try {
-            const cartRepository = AppDataSource.getRepository(Cart);
-            const cart = await cartRepository.findOne({ where: {id: cart_id } });
+            const cart = await cartRepository.findOne({ where: {id: cart_id }});
 
             if (!cart) {
                 return res.status(404).send({ message: "Cart not found ❌" });
@@ -24,100 +32,105 @@ class cartController {
         }
     };
 
-    // public static clearcart = async (req: any, res: Response, next: NextFunction) => {
-    //     const { cart_id } = req.body;
-
-    //     try {
-    //         const cartRepository = AppDataSource.getRepository(Cart);
-    //         const cart = await cartRepository.findOne({
-    //             where: { id: cart_id },
-    //             relations: ["items"]
-    //         });
-
-    //         if (!cart) {
-    //             return res.status(404).send({ message: "Cart not found ❌" });
-    //         }
-
-    //         cart.cart_items = [];
-    //         await cartRepository.save(cart);
-
-    //         res.status(200).send({ message: "Cart cleared successfully" });
-    //     } catch (error) {
-    //         next(error);
-    //     }
-    // };
-
-    public static addtoCart = async (req: Request, res: Response, next: NextFunction) => {
-        const { cart_id, product_id, quantity } = req.body;
-
+    public static addToCart = async (req: Request, res: Response) => {
         try {
-            const cartRepository = AppDataSource.getRepository(Cart);
-            const productRepository = AppDataSource.getRepository(Products);
-
-            // Find the cart
-            const cart = await cartRepository.findOne({ where: { id: cart_id } });
-
-            if (!cart) {
-                return res.status(404).send({ message: "Cart not found ❌" });
+            const {quantity, product_id} = req.body
+            const cartId = Number(req.params.id)
+            const cart = await cartRepository.findOneBy({id : cartId})
+            if(!cartId){
+                res.status(400).send("Cart doesn't exist")
             }
-
-            // Find the product
-            const product = await productRepository.findOne({ where: { id: product_id } });
-
-            if (!product) {
-                return res.status(404).send({ message: "Product not found ❌" });
-            }
-
-            // Create a new cart item
-            const cartItem = new Cart_items();
-            cartItem.cart = cart;
-            cartItem.products = product;
-            cartItem.quantity = quantity;
-
-            // Save the cart item
-            const cartItemRepository = AppDataSource.getRepository(Cart_items);
-            await cartItemRepository.save(cartItem);
-
-            res.status(201).send({ message: "Item added to cart successfully ✔️", cartItem });
+        const newCartItem = cartItemRepository.create({
+            quantity,
+            product_id,
+            cart_id : cart.id
+        })
+        await cartItemRepository.save(newCartItem)
+        res.status(201).send({"cart item": newCartItem})
         } catch (error) {
-            next(error);
+            console.log(error)
+            res.status(500).json(error)
         }
     };
 
-//     public static checkout = async (req: Request, res: Response, next: NextFunction) => {
-//         const { cartId, userId } = req.body;
+    public static getAllItemInCart = async (req: Request, res: Response) => {
+        try {
+            const id = Number(req.params.id)
+            const cart = await cartRepository.findOne({
+                where: {id},
+                relations: ["cart_items"]
+            })
+            if(!cart){
+                res.status(400).send("Cart doesn't exist")
+            }
+         res.status(200).send(cart.cart_items)
+        } catch (error) {
+            console.log(error)
+        }
+    };
 
-//         try {
-//             const userRepository = AppDataSource.getRepository(User);
-//             const user = await userRepository.findOne({ where: { id: userId } });
+    public static clearCart = async (req: Request, res: Response) => {
+        try {
+            const cartId = Number(req.params.id);
+            const cart = await cartRepository.findOneBy({ id: cartId});
 
-//             if (!user) {
-//                 return res.status(404).send({ message: "User not found ❌" });
-//             }
+            if (!cart) {
+                return res.status(400).send("Cart doesn't exist");
+            }
 
-//             const cartRepository = AppDataSource.getRepository(Cart);
-//             const cart = await cartRepository.findOne({
-//                 where: { id: cartId },
-//                 relations: ["items", "items.product"]
-//             });
+            await cartItemRepository.delete({ cart_id: cartId });
 
-//             if (!cart) {
-//                 return res.status(404).send({ message: "Cart not found ❌" });
-//             }
+            res.status(200).send({ message: "Cart cleared successfully" });
+        } catch (error) {
+            console.log(error);
+            res.status(500).json(error);
+        }
+    };
 
-//             if (cart.items.length === 0) {
-//                 return res.status(400).send({ message: "Cart is empty ❌" });
-//             }
+    public static checkout = async (req: any, res: Response) => {
+        try {
+            const user_id = req.user_id
+            const user = await userRepository.findOneBy({ id: user_id})
+            if(!user){
+                res.status(404).send("No user found")
+            }
+            const cartId = Number(req.params.id);
+            const cart = await cartRepository.findOne({
+                where: { id: cartId },
+            });
 
-//             // Simulate checkout process
-//             cart.items = [];
-//             await cartRepository.save(cart);
+            if (!cart) {
+                return res.status(400).send("Cart doesn't exist");
+            }
 
-//             res.status(200).send({ message: "Checkout successful" });
-//         } catch (error) {
-//             next(error);
-//         }
-//     };
+            let totalAmount = 0;
+            for (const item of cart.cart_items) {
+                totalAmount += item.quantity * item.products.price;
+            }
+
+            const newOrder = orderRespository.create({
+                user_id,
+                total_amount : totalAmount,
+                status : "pending",
+                createdAt: new Date(),
+                cart_id : cartId,
+                items: cart.cart_items.map(item => ({
+                    productId: item.product_id,
+                    quantity: item.quantity,
+                    price: item.products.price
+                }))
+                
+            })
+
+            await orderRespository.save(newOrder);
+
+            await cartItemRepository.delete({ cart_id: cartId });
+
+            res.status(200).send({ message: "Checkout successful", order: newOrder });
+        } catch (error) {
+            console.log(error);
+            res.status(500).json(error);
+        }
+    };    
 }
-
 export default cartController;

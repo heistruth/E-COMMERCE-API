@@ -16,6 +16,5 @@ export class Cart {
     user: User
 
     @OneToMany(() => Cart_items, (cart_items) => cart_items.cart)
-    @JoinColumn()
-    cart_items: Cart_items
+    cart_items: Cart_items[]
 }

@@ -15,11 +15,12 @@ class productController {
     };
 
     public static getproductbyid = async (req: any, res: Response, next: NextFunction) => {
-        const { id } = req.body;
+        const { product_id } = req.body;
+        const id = req.product_id
 
         try {
             const productRepository = AppDataSource.getRepository(Products);
-            const product = await productRepository.findOne(id);
+            const product = await productRepository.findOne({ where: {id: product_id }});
 
             if (!product) {
                 return res.status(404).send({ message: 'Product not found' });
@@ -58,7 +59,7 @@ class productController {
 
         try {
             const productRepository = AppDataSource.getRepository(Products);
-            const product = await productRepository.findOne(id);
+            const product = await productRepository.findOne({ where: { id }  });
 
             if (!product) {
                 return res.status(404).send({ message: 'Product not found' });
@@ -81,7 +82,7 @@ class productController {
 
         try {
             const productRepository = AppDataSource.getRepository(Products);
-            const product = await productRepository.findOne(id);
+            const product = await productRepository.findOne({ where: { id }});
 
             if (!product) {
                 return res.status(404).send({ message: 'Product not found' });

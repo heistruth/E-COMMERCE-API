@@ -1,10 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn } from "typeorm";
 import { Cart } from "./cart"
 import { Products } from "./Products";
 
 @Entity()
 export class Cart_items {
-
     @PrimaryGeneratedColumn()
     id: number;
 
@@ -17,8 +16,10 @@ export class Cart_items {
     @Column()
     quantity: number
 
-    @OneToMany(() => Cart, (cart) => cart.cart_items)
-    cart: Cart
+  
+    @ManyToOne(() => Cart, (cart) => cart.cart_items)
+    @JoinColumn({ name: "cart_id" }) // Define join column for cart_id
+    cart: Cart;
 
     @OneToMany(() => Products, (products) => products.cart_items)
     products: Products

@@ -5,7 +5,6 @@ import { Cart_items } from "./entity/cart_items"
 import { Orders } from "./entity/orders"
 import { Products } from "./entity/Products"
 import { Cart } from "./entity/cart"
-import { Order_items } from "./entity/order_items"
 
 export const AppDataSource = new DataSource({
     type: "postgres",
@@ -16,7 +15,7 @@ export const AppDataSource = new DataSource({
     database: "E-COMMERCE-API",
     synchronize: true,
     logging: false,
-    entities: [User, Cart_items, Cart, Products, Orders, Order_items],
+    entities: [User, Cart_items, Cart, Products, Orders],
     migrations: [],
     subscribers: [],
 })
